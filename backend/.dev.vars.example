@@ -1,0 +1,26 @@
+# Better Auth
+BETTER_AUTH_SECRET=your-secret-key-minimum-32-characters-long
+BETTER_AUTH_URL=http://localhost:8787
+
+# OAuth Providers (Optional)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+
+# Email Service (Required for sending invoices)
+RESEND_API_KEY=your-resend-api-key
+EMAIL_FROM_DOMAIN=yourdomain.com
+
+# Cloudflare R2 Storage (Required for PDF storage)
+R2_PUBLIC_DOMAIN=https://your-r2-public-domain.com
+
+# Payment Providers (Optional)
+PADDLE_VENDOR_ID=your-paddle-vendor-id
+PADDLE_API_KEY=your-paddle-api-key
+PADDLE_WEBHOOK_SECRET=your-paddle-webhook-secret
+PAYPAL_CLIENT_ID=your-paypal-client-id
+PAYPAL_CLIENT_SECRET=your-paypal-client-secret
+
+# Rate Limiting (Optional)
+ARCJET_KEY=your-arcjet-key

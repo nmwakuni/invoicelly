@@ -1,0 +1,17 @@
+name = "invoicegen"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "invoice-generator"
+database_id = "0807ca2f-efb6-492b-be27-1fb10b6fd1ee"
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "invoice-pdfs"
+
+[observability]
+enabled = true
