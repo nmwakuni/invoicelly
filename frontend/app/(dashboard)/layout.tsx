@@ -1,8 +1,6 @@
 // app/(dashboard)/layout.tsx
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Navbar } from '@/components/layout/navbar'
 
@@ -11,16 +9,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
-
-  useEffect(() => {
-    // Check authentication
-    const token = localStorage.getItem('auth-token')
-    if (!token) {
-      router.push('/login')
-    }
-  }, [router])
-
+  // Authentication is handled by SessionProvider in the root layout
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />

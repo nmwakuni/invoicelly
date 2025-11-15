@@ -2,7 +2,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useSubscription } from '@/lib/hooks/use-subscription'
 import { Badge } from '@/components/ui/badge'
+import { signOut } from '@/lib/auth'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -28,11 +29,12 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { data: subscription } = useSubscription()
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth-token')
-    window.location.href = '/login'
+  const handleLogout = async () => {
+    await signOut()
+    router.push('/login')
   }
 
   return (

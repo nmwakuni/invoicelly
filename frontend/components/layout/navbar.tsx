@@ -14,12 +14,19 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { signOut } from '@/lib/auth'
 
 export function Navbar() {
+  const router = useRouter()
   const user = {
     name: 'John Doe',
     email: 'john@example.com',
+  }
+
+  const handleLogout = async () => {
+    await signOut()
+    router.push('/login')
   }
 
   return (
@@ -78,13 +85,8 @@ export function Navbar() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                localStorage.removeItem('auth-token')
-                window.location.href = '/login'
-              }}
-            >
-              <LogIn className="mr-2 h-4 w-4" />
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
               Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
