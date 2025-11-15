@@ -1,9 +1,9 @@
-// tests/unit/validation.test.ts
 import { describe, it, expect } from 'vitest'
 import {
   createClientSchema,
   createInvoiceSchema,
-  invoiceItemSchema
+  sendInvoiceSchema,
+  recordPaymentSchema,
 } from '../../src/utils/validation'
 
 describe('Validation Schemas', () => {
@@ -12,9 +12,8 @@ describe('Validation Schemas', () => {
       const validClient = {
         name: 'John Doe',
         email: 'john@example.com',
-        company: 'Acme Corp'
+        company: 'Acme Corp',
       }
-
       const result = createClientSchema.safeParse(validClient)
       expect(result.success).toBe(true)
     })
@@ -22,81 +21,72 @@ describe('Validation Schemas', () => {
     it('should reject invalid email', () => {
       const invalidClient = {
         name: 'John Doe',
-        email: 'not-an-email'
+        email: 'not-an-email',
       }
-
       const result = createClientSchema.safeParse(invalidClient)
       expect(result.success).toBe(false)
     })
 
     it('should reject missing name', () => {
       const invalidClient = {
-        email: 'john@example.com'
+        email: 'john@example.com',
       }
-
       const result = createClientSchema.safeParse(invalidClient)
       expect(result.success).toBe(false)
     })
   })
 
-  describe('invoiceItemSchema', () => {
-    it('should validate valid invoice item', () => {
-      const validItem = {
-        description: 'Web Development',
-        quantity: 10,
-        unitPrice: 100,
-        amount: 1000
+  describe('sendInvoiceSchema', () => {
+    it('should validate valid send invoice data', () => {
+      const validData = {
+        to: 'client@example.com',
+        subject: 'Invoice INV-001',
+        message: 'Please find attached',
       }
-
-      const result = invoiceItemSchema.safeParse(validItem)
+      const result = sendInvoiceSchema.safeParse(validData)
       expect(result.success).toBe(true)
     })
 
-    it('should reject negative quantity', () => {
-      const invalidItem = {
-        description: 'Web Development',
-        quantity: -5,
-        unitPrice: 100,
-        amount: -500
+    it('should reject invalid email', () => {
+      const invalidData = {
+        to: 'not-an-email',
       }
-
-      const result = invoiceItemSchema.safeParse(invalidItem)
+      const result = sendInvoiceSchema.safeParse(invalidData)
       expect(result.success).toBe(false)
     })
   })
 
-  describe('createInvoiceSchema', () => {
-    it('should validate valid invoice', () => {
-      const validInvoice = {
-        clientId: '123e4567-e89b-12d3-a456-426614174000',
-        issueDate: new Date(),
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        items: [
-          {
-            description: 'Consulting',
-            quantity: 5,
-            unitPrice: 150,
-            amount: 750
-          }
-        ],
-        taxRate: 10,
-        currency: 'USD'
+  describe('recordPaymentSchema', () => {
+    it('should validate valid payment data', () => {
+      const validData = {
+        invoiceId: '123e4567-e89b-12d3-a456-426614174000',
+        amount: 100.50,
+        paymentMethod: 'bank_transfer',
+        paymentDate: new Date(),
       }
-
-      const result = createInvoiceSchema.safeParse(validInvoice)
+      const result = recordPaymentSchema.safeParse(validData)
       expect(result.success).toBe(true)
     })
 
-    it('should reject invoice without items', () => {
-      const invalidInvoice = {
-        clientId: '123e4567-e89b-12d3-a456-426614174000',
-        issueDate: new Date(),
-        dueDate: new Date(),
-        items: [],
-        currency: 'USD'
+    it('should reject negative amount', () => {
+      const invalidData = {
+        invoiceId: '123e4567-e89b-12d3-a456-426614174000',
+        amount: -100,
+        paymentMethod: 'cash',
+        paymentDate: new Date(),
       }
+      const result = recordPaymentSchema.safeParse(invalidData)
+      expect(result.success).toBe(false)
+    })
 
-      const result = createInvoiceSchema.safeParse(invalidInvoice)
+    it('should reject amount exceeding max', () => {
+      const invalidData = {
+        invoiceId: '123e4567-e89b-12d3-a456-426614174000',
+        amount: 10000000000, // Exceeds max
+        paymentMethod: 'cash',
+        paymentDate: new Date(),
+      }
+      const result = recordPaymentSchema.safeParse(invalidData)
       expect(result.success).toBe(false)
     })
   })

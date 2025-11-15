@@ -53,15 +53,22 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
 app.use('/*', requireAuth)
 
-// GET /api/invoices - List invoices
+// GET /api/invoices - List invoices with pagination
 app.get('/', async (c) => {
   const user = c.get('user')
   const userId = user.id
   const status = c.req.query('status') // Filter by status
   const clientId = c.req.query('clientId') // Filter by client
-  
+  const page = parseInt(c.req.query('page') || '1', 10)
+  const limit = parseInt(c.req.query('limit') || '50', 10)
+  const offset = (page - 1) * limit
+
+  // Validate pagination params
+  const validLimit = Math.min(Math.max(limit, 1), 100) // Between 1-100
+  const validOffset = Math.max(offset, 0)
+
   let query = `
-    SELECT 
+    SELECT
       i.*,
       c.name as client_name,
       c.email as client_email
@@ -69,23 +76,53 @@ app.get('/', async (c) => {
     JOIN clients c ON i.client_id = c.id
     WHERE i.user_id = ?
   `
-  const bindings: any[] = [userId]
-  
+  const bindings: (string | number)[] = [userId]
+
   if (status) {
     query += ' AND i.status = ?'
     bindings.push(status)
   }
-  
+
   if (clientId) {
     query += ' AND i.client_id = ?'
     bindings.push(clientId)
   }
-  
-  query += ' ORDER BY i.created_at DESC LIMIT 100'
-  
-  const invoices = await c.env.DB.prepare(query).bind(...bindings).all()
-  
-  return c.json({ invoices: invoices.results })
+
+  query += ' ORDER BY i.created_at DESC LIMIT ? OFFSET ?'
+  bindings.push(validLimit, validOffset)
+
+  // Get total count for pagination metadata
+  let countQuery = 'SELECT COUNT(*) as count FROM invoices WHERE user_id = ?'
+  const countBindings: (string | number)[] = [userId]
+
+  if (status) {
+    countQuery += ' AND status = ?'
+    countBindings.push(status)
+  }
+
+  if (clientId) {
+    countQuery += ' AND client_id = ?'
+    countBindings.push(clientId)
+  }
+
+  const [invoicesResult, countResult] = await Promise.all([
+    c.env.DB.prepare(query).bind(...bindings).all(),
+    c.env.DB.prepare(countQuery).bind(...countBindings).first() as Promise<{ count: number } | null>,
+  ])
+
+  const total = countResult?.count || 0
+  const totalPages = Math.ceil(total / validLimit)
+
+  return c.json({
+    invoices: invoicesResult.results,
+    pagination: {
+      page,
+      limit: validLimit,
+      total,
+      totalPages,
+      hasMore: page < totalPages,
+    },
+  })
 })
 
 // GET /api/invoices/:id - Get invoice with items
