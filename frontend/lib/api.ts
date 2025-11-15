@@ -25,11 +25,13 @@ api.interceptors.response.use(
 
 // API functions remain the same...
 export const invoicesApi = {
-  getAll: () => api.get('/api/invoices'),
+  getAll: (params?: any) => api.get('/api/invoices', { params }),
   getById: (id: string) => api.get(`/api/invoices/${id}`),
   create: (data: any) => api.post('/api/invoices', data),
   update: (id: string, data: any) => api.patch(`/api/invoices/${id}`, data),
   delete: (id: string) => api.delete(`/api/invoices/${id}`),
+  send: (id: string, data: any) => api.post(`/api/invoices/${id}/send`, data),
+  markPaid: (id: string) => api.post(`/api/invoices/${id}/mark-paid`),
 }
 
 export const clientsApi = {

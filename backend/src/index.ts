@@ -17,6 +17,7 @@ type Bindings = {
   GOOGLE_CLIENT_SECRET?: string
   GITHUB_CLIENT_ID?: string
   GITHUB_CLIENT_SECRET?: string
+  ALLOWED_ORIGINS?: string
 }
 
 type Variables = {
@@ -30,10 +31,16 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
 // Middleware
 app.use('*', logger())
-app.use('*', cors({
-  origin: ['http://localhost:3000', 'https://yourdomain.com'],
-  credentials: true,
-}))
+app.use('*', async (c, next) => {
+  const allowedOrigins = c.env.ALLOWED_ORIGINS
+    ? c.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000']
+
+  return cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })(c, next)
+})
 
 // Initialize auth instance for each request
 app.use('*', async (c, next) => {

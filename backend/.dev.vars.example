@@ -1,3 +1,6 @@
+# CORS Configuration
+ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
+
 # Better Auth
 BETTER_AUTH_SECRET=your-secret-key-minimum-32-characters-long
 BETTER_AUTH_URL=http://localhost:8787

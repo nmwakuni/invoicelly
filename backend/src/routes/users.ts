@@ -33,55 +33,51 @@ app.get('/me', async (c) => {
 app.patch('/me', async (c) => {
   const user = c.get('user')
   const db = c.env.DB
-  
+
   const body = await c.req.json() as Partial<{
     name: string
     businessName: string
     businessAddress: string
     taxId: string
   }>
-  
+
+  // Whitelist of allowed fields to prevent SQL injection
+  const allowedFields: Record<string, string> = {
+    name: 'name',
+    businessName: 'businessName',
+    businessAddress: 'businessAddress',
+    taxId: 'taxId',
+  }
+
   const updates: string[] = []
   const values: any[] = []
-  
-  if (body.name) {
-    updates.push('name = ?')
-    values.push(body.name)
-  }
-  
-  if (body.businessName) {
-    updates.push('businessName = ?')
-    values.push(body.businessName)
-  }
-  
-  if (body.businessAddress) {
-    updates.push('businessAddress = ?')
-    values.push(body.businessAddress)
-  }
-  
-  if (body.taxId) {
-    updates.push('taxId = ?')
-    values.push(body.taxId)
-  }
-  
+
+  // Only process whitelisted fields
+  Object.entries(body).forEach(([key, value]) => {
+    if (value !== undefined && allowedFields[key]) {
+      updates.push(`${allowedFields[key]} = ?`)
+      values.push(value)
+    }
+  })
+
   if (updates.length === 0) {
     return c.json({ error: 'No fields to update' }, 400)
   }
-  
+
   updates.push('updatedAt = ?')
   values.push(Date.now())
   values.push(user.id)
-  
+
   await db
     .prepare(`UPDATE user SET ${updates.join(', ')} WHERE id = ?`)
     .bind(...values)
     .run()
-  
+
   const updatedUser = await db
     .prepare('SELECT * FROM user WHERE id = ?')
     .bind(user.id)
     .first() as User | null
-  
+
   return c.json({ user: updatedUser })
 })
 
