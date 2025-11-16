@@ -1,0 +1,87 @@
+version: '3.9'
+
+services:
+  # Backend API (Cloudflare Workers with Hono)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: runner
+    container_name: invoicegen-backend
+    ports:
+      - "8787:8787"
+    environment:
+      - NODE_ENV=development
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-dev-secret-key-minimum-32-characters}
+      - BETTER_AUTH_URL=http://localhost:8787
+      - ALLOWED_ORIGINS=http://localhost:3000,http://frontend:3000
+      # Email Service
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_FROM_DOMAIN=${EMAIL_FROM_DOMAIN:-localhost}
+      # Storage
+      - R2_PUBLIC_DOMAIN=${R2_PUBLIC_DOMAIN:-http://localhost:8787}
+      # OAuth (Optional)
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      # Payment Providers (Optional)
+      - PADDLE_VENDOR_ID=${PADDLE_VENDOR_ID}
+      - PADDLE_API_KEY=${PADDLE_API_KEY}
+      - PADDLE_WEBHOOK_SECRET=${PADDLE_WEBHOOK_SECRET}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
+      # Rate Limiting (Optional)
+      - ARCJET_KEY=${ARCJET_KEY}
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+      - wrangler_cache:/root/.wrangler
+    networks:
+      - invoicegen-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8787/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Frontend (Next.js 16)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: runner
+    container_name: invoicegen-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:8787
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - invoicegen-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+networks:
+  invoicegen-network:
+    driver: bridge
+    name: invoicegen-network
+
+volumes:
+  backend_node_modules:
+    name: invoicegen-backend-node-modules
+  wrangler_cache:
+    name: invoicegen-wrangler-cache
